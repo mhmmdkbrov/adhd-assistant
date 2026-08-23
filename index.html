@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADHD Assistant</title>
+<script>
+(function() {
+  const saved = localStorage.getItem("theme");
+  const theme = saved || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  document.documentElement.setAttribute("data-theme", theme);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<style>
+  :root[data-theme="light"] {
+    --bg: #F4F7F5;
+    --bg-glow: radial-gradient(circle at 85% -10%, rgba(62,114,104,0.06), transparent 45%);
+    --card: #FFFFFF;
+    --card-2: #F1F5F3;
+    --ink: #223029;
+    --muted: #74827B;
+    --accent: #3E7268;
+    --accent-soft: #E3EFEB;
+    --accent-text: #2A5049;
+    --btn-ink: #FFFFFF;
+    --work: #EFE2C8; --work-ink: #8A6A2E;
+    --study: #D8E8E3; --study-ink: #386A5C;
+    --personal: #EAD9E4; --personal-ink: #8A4E73;
+    --high: #C4664B; --medium: #C99A44; --low: #5C9678;
+    --border: #E1E8E4;
+    --shadow: 0 1px 2px rgba(34,48,41,0.04), 0 4px 16px rgba(34,48,41,0.05);
+    --badge-medium-bg: #F3E6D0; --badge-medium-ink: #9C7A3D;
+    --badge-high-bg: #F3DAD3; --badge-high-ink: #A5573F;
+    --avatar-hair: #4A3B33;
+    --avatar-skin: #FBE3D0;
+    --avatar-blush: #F2A98C;
+    --avatar-eye: #3A2E28;
+  }
+  :root[data-theme="dark"] {
+    --bg: #101613;
+    --bg-glow: radial-gradient(circle at 15% -10%, rgba(79,191,159,0.10), transparent 40%), radial-gradient(circle at 90% 10%, rgba(124,138,216,0.06), transparent 35%);
+    --card: #171F1B;
+    --card-2: #1D2622;
+    --ink: #E9F1EC;
+    --muted: #8CA097;
+    --accent: #4FBF9F;
+    --accent-soft: #2A4A40;
+    --accent-text: #7FE0C4;
+    --btn-ink: #0B1512;
+    --work: #3A3324; --work-ink: #E3C77E;
+    --study: #223530; --study-ink: #7FD9BE;
+    --personal: #35232E; --personal-ink: #E39AC0;
+    --high: #E0785D; --medium: #E0B85D; --low: #6FCB9F;
+    --border: #263029;
+    --shadow: 0 8px 28px rgba(0,0,0,0.35);
+    --badge-medium-bg: #3A3324; --badge-medium-ink: #E3C77E;
+    --badge-high-bg: #3A2620; --badge-high-ink: #E0785D;
+    --avatar-hair: #B08968;
+    --avatar-skin: #F0D9C4;
+    --avatar-blush: #E8A891;
+    --avatar-eye: #2A211C;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    background-image: var(--bg-glow);
+    color: var(--ink);
+    line-height: 1.6;
+    transition: background 0.3s, color 0.3s;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .breathing-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0;
+    animation: breathe 4s ease-in-out infinite;
+    box-shadow: 0 0 12px rgba(79,191,159,0.5);
+  }
+  @media (prefers-reduced-motion: reduce) { .breathing-dot { animation: none; } }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.5); opacity: 1; }
+  }
+  header h1 {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 24px; font-weight: 600; margin: 0 0 2px; letter-spacing: -0.01em;
+  }
+  header p { color: var(--muted); margin: 0; font-size: 13px; }
+  .header-right { display: flex; align-items: flex-start; gap: 12px; }
+  .clock { text-align: right; font-family: "JetBrains Mono", monospace; }
+  .clock-time { font-size: 22px; font-weight: 500; color: var(--accent-text); letter-spacing: 0.02em; }
+  .clock-date { font-size: 12px; color: var(--muted); margin-top: 2px; font-family: "Inter", sans-serif; }
+  .theme-toggle {
+    background: var(--card-2);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    padding: 8px;
+    border-radius: 8px;
+    margin: 0;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .theme-toggle:hover { background: var(--border); transform: none; }
+  .theme-toggle i { font-size: 18px; }
+
+  .tabs {
+    display: flex; gap: 6px; margin-bottom: 24px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 5px;
+  }
+  .tab-btn {
+    flex: 1; background: none; border: none; color: var(--muted);
+    padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    font-family: "Inter", inherit; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background 0.2s, color 0.2s; margin: 0; box-shadow: none;
+  }
+  .tab-btn i { font-size: 16px; }
+  .tab-btn.active { background: var(--accent-soft); color: var(--accent-text); }
+  .tab-btn:hover:not(.active) { color: var(--ink); background: var(--card-2); }
+
+  .view { display: none; animation: fadein 0.35s ease; }
+  .view.active { display: block; }
+  @keyframes fadein {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 24px; margin-bottom: 20px;
+    box-shadow: var(--shadow); transition: background 0.3s, border 0.3s;
+  }
+  .card h2 {
+    font-family: "Space Grotesk", sans-serif; font-size: 16px; font-weight: 600;
+    margin: 0 0 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 i { color: var(--accent); font-size: 18px; }
+
+  textarea, input[type=text] {
+    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px; font-family: inherit; font-size: 14px; resize: vertical;
+    background: var(--bg); color: var(--ink);
+  }
+  textarea:focus, input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button {
+    background: var(--accent); color: var(--btn-ink); border: none; border-radius: 8px;
+    padding: 10px 18px; font-size: 14px; font-weight: 600; font-family: "Inter", inherit;
+    cursor: pointer; margin-top: 12px; display: inline-flex; align-items: center; gap: 6px;
+    transition: transform 0.15s, background 0.15s;
+  }
+  button:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  button:active { transform: translateY(0); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .risk-intro { font-size: 13px; color: var(--muted); margin: -2px 0 14px; }
+
+  .progress-bar {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    padding: 10px 14px; background: var(--accent-soft); border-radius: 10px;
+  }
+  .progress-bar i { color: var(--accent-text); font-size: 17px; }
+  .progress-bar span { font-size: 13px; color: var(--accent-text); font-weight: 500; }
+  .progress-track { flex: 1; height: 6px; background: rgba(127,127,127,0.15); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 4px; width: 0%; transition: width 0.5s ease; }
+
+  .task {
+    display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px;
+    background: var(--card-2); margin-bottom: 8px; animation: taskIn 0.3s ease;
+  }
+  .delete-btn {
+  background: none;
+  margin: 0;
+  padding: 4px;
+  box-shadow: none;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.delete-btn:hover {
+  background: none;
+  filter: none;
+  color: var(--high);
+  transform: none;
+}
+  @keyframes taskIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
+  .task input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+  .task-title { flex: 1; font-size: 14px; }
+  .task.done { animation: celebrate 0.5s ease; }
+  .task.done .task-title { text-decoration: line-through; color: var(--muted); }
+  @keyframes celebrate { 0% { background: var(--accent-soft); } 100% { background: var(--card-2); } }
+  .tag { font-size: 11px; padding: 3px 8px; border-radius: 20px; }
+  .tag.work { background: var(--work); color: var(--work-ink); }
+  .tag.study { background: var(--study); color: var(--study-ink); }
+  .tag.personal { background: var(--personal); color: var(--personal-ink); }
+  .priority-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .priority-dot.high { background: var(--high); }
+  .priority-dot.medium { background: var(--medium); }
+  .priority-dot.low { background: var(--low); }
+  .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 24px 0; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .field-row label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .field-row input, .field-row select { padding: 8px; font-size: 13px; }
+  .field-row select {
+    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--ink); font-family: inherit;
+  }
+  .field-hint { font-size: 11px; color: var(--muted); margin: 4px 0 0; }
+
+  .quiz-title { font-size: 12px; font-weight: 600; color: var(--accent-text); margin: 18px 0 8px; }
+  .quiz-q { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .quiz-q label { font-size: 13px; flex: 1; }
+  .quiz-q select {
+    flex-shrink: 0; width: 120px; border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 8px; font-family: inherit; font-size: 12px; background: var(--bg); color: var(--ink);
+  }
+
+  .risk-badge { display: inline-block; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .risk-badge.low { background: var(--accent-soft); color: var(--accent-text); }
+  .risk-badge.medium { background: var(--badge-medium-bg); color: var(--badge-medium-ink); }
+  .risk-badge.high { background: var(--badge-high-bg); color: var(--badge-high-ink); }
+  .risk-note { font-size: 12px; color: var(--muted); margin: 0; }
+  .risk-advice { font-size: 13px; color: var(--ink); margin: 10px 0 0; padding: 12px; background: var(--card-2); border-radius: 8px; line-height: 1.6; }
+  .risk-bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; margin: 12px 0 4px; }
+  .risk-bar-segment { flex: 1; opacity: 0.2; transition: opacity 0.3s; }
+  .risk-bar-segment.active { opacity: 1; }
+  .risk-bar-segment.low { background: var(--low); }
+  .risk-bar-segment.medium { background: var(--medium); }
+  .risk-bar-segment.high { background: var(--high); }
+  .risk-bar-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+
+  .collapse-toggle { background: none; color: var(--accent-text); padding: 0; margin: 4px 0 0; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; box-shadow: none; }
+  .collapse-toggle:hover { background: none; filter: none; color: var(--accent); transform: none; }
+  .risk-fields { display: none; }
+  .risk-fields.open { display: block; animation: fadein 0.3s ease; }
+
+  .assistant-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .assistant-name {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .assistant-tagline {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .chat-mode-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .mode-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: "Inter", inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: background 0.2s, color 0.2s;
+    margin: 0;
+    box-shadow: none;
+  }
+  .mode-btn.active { background: var(--accent-soft); color: var(--accent-text); }
+  .mode-btn:hover:not(.active) { color: var(--ink); }
+
+  .chat-mode { display: none; animation: fadein 0.3s ease; }
+  .chat-mode.active { display: block; }
+  .akinator-btns { display: flex; gap: 10px; }
+  .akinator-btns button { margin-top: 0; flex: 1; justify-content: center; }
+  .btn-secondary {
+    background: var(--card-2);
+    color: var(--ink);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { filter: none; background: var(--border); }
+
+  .chat-log { max-height: 280px; overflow-y: auto; margin-bottom: 12px; }
+  .chat-msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; background: var(--card-2); animation: taskIn 0.3s ease; }
+  .chat-msg.answer { background: var(--accent-soft); color: var(--accent-text); }
+  .status { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .period-row { margin-bottom: 14px; }
+  .period-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .period-label { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .period-count { font-size: 12px; color: var(--muted); }
+  .period-track { height: 8px; background: var(--card-2); border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+  .period-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.5s ease; }
+  .period-breakdown { font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="header-left">
+      <span class="breathing-dot"></span>
+      <div>
+        <h1 id="greeting">Salam!</h1>
+        <p>Kiçik addımlar da irəliləyişdir.</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="clock">
+        <div class="clock-time" id="clockTime">00:00:00</div>
+        <div class="clock-date" id="clockDate">-</div>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Temanı dəyiş">
+        <i class="ti ti-moon" id="themeIcon"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('tasks')" id="tabBtn-tasks"><i class="ti ti-checklist"></i>Tapşırıqlar</button>
+    <button class="tab-btn" onclick="switchTab('focus')" id="tabBtn-focus"><i class="ti ti-gauge"></i>Fokus</button>
+    <button class="tab-btn" onclick="switchTab('chat')" id="tabBtn-chat"><i class="ti ti-message-circle"></i>Sual-cavab</button>
+    <button class="tab-btn" onclick="switchTab('progress')" id="tabBtn-progress"><i class="ti ti-chart-bar"></i>Proqres</button>
+  </div>
+
+  <div class="view active" id="view-tasks">
+    <div class="card">
+      <h2><i class="ti ti-brain"></i>Nə düşünürsən?</h2>
+      <p class="risk-intro">Hər şeyi ağlında saxlamağa çalışma — bura tök, mən sənin üçün nizamlayım.</p>
+      <textarea id="brainDumpInput" rows="4" placeholder="Ağlına gələni sərbəst yaz, məsələn: sabah hesabatı bitirməliyəm, dərsə hazırlaşmalıyam..."></textarea>
+      <button id="brainDumpBtn" onclick="submitBrainDump()"><i class="ti ti-sparkles"></i>Analiz et</button>
+      <p class="status" id="brainDumpStatus"></p>
+    </div>
+
+    <div class="card">
+      <h2><i class="ti ti-checklist"></i>Tapşırıqların</h2>
+      <div class="progress-bar" id="progressBar" style="display:none;">
+        <i class="ti ti-flame"></i>
+        <span id="progressText">0 / 0 bitib</span>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+      <div id="taskList">
+        <p class="empty">Hələ tapşırıq yoxdur. Yuxarıda bir şey yaz, başlayaq.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="view" id="view-focus">
+    <div class="card">
+      <h2><i class="ti ti-gauge"></i>Fokus göstəricisi</h2>
+      <p class="risk-intro">Bu göstərici nədir? Machine Learning modeli əhval-ruhiyyə, narahatlıq, alkohol istifadəsi və akademik göstəricilərə əsasən sənin fokus itirmə ehtimalını "aşağı", "orta" və ya "yüksək" kimi qiymətləndirir. Bu, kursun ML modelinin demosudur — klinik diaqnoz deyil, statistik təxmindir.</p>
+      <button class="collapse-toggle" onclick="toggleRiskFields()" id="riskToggleBtn">Dəyərləri daxil et</button>
+      <div class="risk-fields" id="riskFields">
+        <div class="field-row" style="margin-top:14px;">
+          <div><label>Yaş</label><input type="text" id="f_age" placeholder="22"></div>
+          <div><label>Cins</label>
+            <select id="f_sex"><option value="0">Qadın</option><option value="1">Kişi</option></select>
+          </div>
+        </div>
+
+        <p class="quiz-title">Son 2 həftədə əhval-ruhiyyən</p>
+        <div class="quiz-q"><label>Kədərli / məyus hiss etmisən?</label><select class="likert4" id="dep1"></select></div>
+        <div class="quiz-q"><label>Fəaliyyətlərdən həzz almaqda çətinlik?</label><select class="likert4" id="dep2"></select></div>
+        <div class="quiz-q"><label>Enerjin azalıb?</label><select class="likert4" id="dep3"></select></div>
+        <div class="quiz-q"><label>Özünə inamın azalıb?</label><select class="likert4" id="dep4"></select></div>
+        <div class="quiz-q"><label>Yuxu problemin olub?</label><select class="likert4" id="dep5"></select></div>
+
+        <p class="quiz-title">Narahatlıq səviyyən</p>
+        <div class="quiz-q"><label>Gərginlik / narahatlıq hiss etmisən?</label><select class="likert4" id="anx1"></select></div>
+        <div class="quiz-q"><label>Rahatlaya bilməmisən?</label><select class="likert4" id="anx2"></select></div>
+        <div class="quiz-q"><label>Ürək döyüntün səbəbsiz sürətlənib?</label><select class="likert4" id="anx3"></select></div>
+        <div class="quiz-q"><label>Nigaran düşüncələr saxlaya bilməmisən?</label><select class="likert4" id="anx4"></select></div>
+        <div class="quiz-q"><label>Əsəbi olmusan?</label><select class="likert4" id="anx5"></select></div>
+
+        <p class="quiz-title">Alkohol istifadəsi</p>
+        <div class="quiz-q"><label>Nə qədər tez-tez alkoqol qəbul edirsən?</label><select class="alc-freq" id="alc1"></select></div>
+        <div class="quiz-q"><label>Bir dəfəyə çox miqdarda içirsən?</label><select class="alc-often" id="alc2"></select></div>
+        <div class="quiz-q"><label>Bundan sonra peşman olmusan?</label><select class="alc-often" id="alc3"></select></div>
+
+        <div class="field-row">
+          <div>
+            <label>Ümumi orta qiymətin (100 üzərindən)</label>
+            <input type="text" id="f_academic" placeholder="75">
+            <p class="field-hint">Məktəb attestatın və ya universitet ortalamanın təxmini faizi</p>
+          </div>
+          <div></div>
+        </div>
+
+        <button onclick="checkRisk()"><i class="ti ti-gauge"></i>Yoxla</button>
+      </div>
+      <div id="riskResult" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-chat">
+    <div class="card">
+      <div class="assistant-header">
+        <div>
+          <div class="assistant-name">Assistent</div>
+          <div class="assistant-tagline">sənin fokus yoldaşın</div>
+        </div>
+      </div>
+
+      <div class="chat-mode-toggle">
+        <button class="mode-btn active" onclick="switchChatMode('ask')" id="modeBtn-ask"><i class="ti ti-help-circle"></i>Sual ver</button>
+        <button class="mode-btn" onclick="switchChatMode('talk')" id="modeBtn-talk"><i class="ti ti-heart-handshake"></i>Vəziyyətini tap</button>
+      </div>
+
+      <div class="chat-mode active" id="mode-ask">
+        <div class="chat-log" id="chatLog"></div>
+        <input type="text" id="chatInput" placeholder="Məsələn: necə fokuslana bilərəm?">
+        <button onclick="askQuestion()"><i class="ti ti-send"></i>Soruş</button>
+      </div>
+
+      <div class="chat-mode" id="mode-talk">
+        <p class="risk-intro" style="margin-top:0;">Bir neçə sadə suala cavab ver, Assistent problemini tapıb uyğun məsləhət versin.</p>
+        <div id="akinatorBox">
+          <div class="chat-msg answer" id="akinatorQuestion">Yüklənir...</div>
+          <div class="akinator-btns">
+            <button onclick="akinatorAnswer(true)"><i class="ti ti-check"></i>Bəli</button>
+            <button class="btn-secondary" onclick="akinatorAnswer(false)"><i class="ti ti-x"></i>Xeyr</button>
+          </div>
+        </div>
+        <div id="akinatorResult" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="overallStatusCard">
+      <h2><i class="ti ti-heart-handshake"></i>Ümumi vəziyyət</h2>
+      <div id="overallStatus"><p class="status">Yüklənir...</p></div>
+    </div>
+
+    <div class="card">
+      <h2><i class="ti ti-calendar-week"></i>Həftəlik fəaliyyət</h2>
+      <div id="weeklyProgress">
+        <p class="empty">Yüklənir...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = "http://127.0.0.1:8000";
+const CURRENT_USER_ID = 1;
+let totalTasks = 0;
+let doneTasks = 0;
+
+const AZ_DAYS = ["Bazar", "Bazar ertəsi", "Çərşənbə axşamı", "Çərşənbə", "Cümə axşamı", "Cümə", "Şənbə"];
+const AZ_MONTHS = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avqust", "sentyabr", "oktyabr", "noyabr", "dekabr"];
+
+function updateClock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  const ss = String(now.getSeconds()).padStart(2, "0");
+  document.getElementById("clockTime").textContent = `${hh}:${mm}:${ss}`;
+  document.getElementById("clockDate").textContent = `${AZ_DAYS[now.getDay()]}, ${now.getDate()} ${AZ_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+(function setGreeting() {
+  const hour = new Date().getHours();
+  let text = "Salam!";
+  if (hour < 6) text = "Gecən xeyrə qalsın.";
+  else if (hour < 12) text = "Sabahın xeyir!";
+  else if (hour < 18) text = "Günortan xeyir!";
+  else text = "Axşamın xeyir!";
+  document.getElementById("greeting").textContent = text;
+})();
+
+function updateThemeIcon(theme) {
+  document.getElementById("themeIcon").className = theme === "dark" ? "ti ti-sun" : "ti ti-moon";
+}
+updateThemeIcon(document.documentElement.getAttribute("data-theme"));
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme");
+  const next = current === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("theme", next);
+  updateThemeIcon(next);
+}
+
+function switchTab(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById(`view-${name}`).classList.add("active");
+  document.getElementById(`tabBtn-${name}`).classList.add("active");
+}
+
+function populateLikertSelects() {
+  const moodOptions = [
+    { value: "0", label: "Heç" }, { value: "1", label: "Bəzən" },
+    { value: "2", label: "Tez-tez" }, { value: "3", label: "Daim" }
+  ];
+  const alcFreqOptions = [
+    { value: "0", label: "Heç vaxt" }, { value: "1", label: "Ayda bir" },
+    { value: "2", label: "Həftədə 1-2" }, { value: "3", label: "Daha tez-tez" }
+  ];
+  const alcOftenOptions = [
+    { value: "0", label: "Heç vaxt" }, { value: "1", label: "Nadir hallarda" },
+    { value: "2", label: "Bəzən" }, { value: "3", label: "Tez-tez" }
+  ];
+  const fill = (selector, options) => {
+    document.querySelectorAll(selector).forEach(select => {
+      options.forEach(opt => {
+        const el = document.createElement("option");
+        el.value = opt.value;
+        el.textContent = opt.label;
+        select.appendChild(el);
+      });
+    });
+  };
+  fill("select.likert4", moodOptions);
+  fill("select.alc-freq", alcFreqOptions);
+  fill("select.alc-often", alcOftenOptions);
+}
+populateLikertSelects();
+
+function switchChatMode(mode) {
+  document.querySelectorAll(".chat-mode").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById(`mode-${mode}`).classList.add("active");
+  document.getElementById(`modeBtn-${mode}`).classList.add("active");
+}
+
+const ACTION_LABELS = {
+  task_created: "tapşırıq",
+  question_asked: "sual",
+  prediction_requested: "proqnoz",
+  talk_message_sent: "söhbət"
+};
+
+function renderPeriodReport(containerId, data) {
+  const container = document.getElementById(containerId);
+  const periods = Object.keys(data).sort();
+  if (periods.length === 0) {
+    container.innerHTML = `<p class="empty">Hələ fəaliyyət qeydə alınmayıb.</p>`;
+    return;
+  }
+
+  const totals = periods.map(p => Object.values(data[p]).reduce((a, b) => a + b, 0));
+  const maxTotal = Math.max(...totals, 1);
+
+  container.innerHTML = periods.map((p, i) => {
+    const actions = data[p];
+    const total = totals[i];
+    const breakdown = Object.entries(actions)
+      .map(([action, count]) => `${count} ${ACTION_LABELS[action] || action}`)
+      .join(", ");
+    const widthPct = Math.round((total / maxTotal) * 100);
+    return `
+      <div class="period-row">
+        <div class="period-top">
+          <span class="period-label">${p}</span>
+          <span class="period-count">${total} fəaliyyət</span>
+        </div>
+        <div class="period-track"><div class="period-fill" style="width:${widthPct}%"></div></div>
+        <div class="period-breakdown">${breakdown}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+async function loadProgress() {
+  try {
+    const [monthlyRes, weeklyRes, statsRes] = await Promise.all([
+      fetch(`${API_BASE}/monthly-report`),
+      fetch(`${API_BASE}/weekly-report`),
+      fetch(`${API_BASE}/stats`)
+    ]);
+    const monthly = await monthlyRes.json();
+    const weekly = await weeklyRes.json();
+    const stats = await statsRes.json();
+    renderPeriodReport("monthlyProgress", monthly);
+    renderPeriodReport("weeklyProgress", weekly);
+    renderOverallStatus(stats);
+  } catch (err) {
+    document.getElementById("monthlyProgress").innerHTML = `<p class="empty">Yüklənmədi, server işləyirmi yoxla.</p>`;
+    document.getElementById("weeklyProgress").innerHTML = `<p class="empty">Yüklənmədi, server işləyirmi yoxla.</p>`;
+  }
+}
+loadProgress();
+
+function renderOverallStatus(stats) {
+  const box = document.getElementById("overallStatus");
+  const rate = Math.round((stats.completion_rate || 0) * 100);
+
+  if (stats.tasks === 0) {
+    box.innerHTML = `<p class="status">Hələ tapşırıq yoxdur — başlamaq üçün "Tapşırıqlar" bölməsinə keç.</p>`;
+    return;
+  }
+
+  let level, label, advice;
+  if (rate >= 70) {
+    level = "low"; label = "Yaxşı gedir";
+    advice = "Tamamlanma faizin yüksəkdir. Mövcud rutinini davam etdir — bu templi qorumaq üçün özünə kiçik fasilələr verməyi unutma.";
+  } else if (rate >= 40) {
+    level = "medium"; label = "Orta səviyyə";
+    advice = "Bəzi tapşırıqlar yarımçıq qalır. Böyük tapşırıqları kiçik addımlara böl və gündə 1-3 əsas tapşırıqla məhdudlaş.";
+  } else {
+    level = "high"; label = "Diqqət lazımdır";
+    advice = "Tamamlanma faizin aşağıdır. Bu, tənbəllik deyil — siyahı həddindən artıq yüklü ola bilər. Köhnə/lazımsız tapşırıqları sil, yalnız bu günə aid 1-2 şeylə başla.";
+  }
+
+  box.innerHTML = `
+    <span class="risk-badge ${level}">${label}</span>
+    <div class="risk-bar">
+      <div class="risk-bar-segment low ${level === 'low' ? 'active' : ''}"></div>
+      <div class="risk-bar-segment medium ${level === 'medium' ? 'active' : ''}"></div>
+      <div class="risk-bar-segment high ${level === 'high' ? 'active' : ''}"></div>
+    </div>
+    <p class="risk-note">Tamamlanma faizi: ${rate}% (${stats.completed}/${stats.tasks} tapşırıq)</p>
+    <p class="risk-advice">${advice}</p>
+  `;
+}
+
+async function loadExistingTasks() {
+  try {
+    const res = await fetch(`${API_BASE}/tasks`);
+    const tasks = await res.json();
+    tasks.forEach(t => addTaskToList(t));
+  } catch (err) {
+    console.error("Tapşırıqlar yüklənmədi", err);
+  }
+}
+loadExistingTasks();
+
+function setAvatarMood(mood) {
+  const svg = document.getElementById("avatarSvg");
+  if (!svg) return;
+  svg.classList.remove("mood-happy", "mood-thinking");
+  if (mood === "happy") {
+    svg.classList.add("mood-happy");
+    setTimeout(() => svg.classList.remove("mood-happy"), 2200);
+  } else if (mood === "thinking") {
+    svg.classList.add("mood-thinking");
+  }
+}
+
+(function scheduleBlink() {
+  const delay = 2500 + Math.random() * 3000;
+  setTimeout(() => {
+    const svg = document.getElementById("avatarSvg");
+    if (svg) {
+      svg.classList.add("blinking");
+      setTimeout(() => svg.classList.remove("blinking"), 150);
+    }
+    scheduleBlink();
+  }, delay);
+})();
+
+(function initChatWelcome() {
+  const log = document.getElementById("chatLog");
+  const welcome = document.createElement("div");
+  welcome.className = "chat-msg answer";
+  welcome.textContent = "Salam, mən Assistentəm. ADHD ilə bağlı nə bilmək istəyirsən?";
+  log.appendChild(welcome);
+})();
+
+const akinatorTree = {
+  start: {
+    question: "Problemin daha çox tapşırıqlarla bağlıdır?",
+    yes: "taskStart",
+    no: "focusStart"
+  },
+  taskStart: {
+    question: "Tapşırığa başlamaqda çətinlik çəkirsən?",
+    yes: "taskBig",
+    no: "taskSwitch"
+  },
+  taskBig: {
+    question: "Tapşırıq sənə çox böyük və ya qarışıq görünür?",
+    yes: { query: "böyük tapşırığı necə kiçik addımlara bölə bilərəm?" },
+    no: { query: "hansı tapşırığı əvvəl etməli olduğumu necə seçim?" }
+  },
+  taskSwitch: {
+    question: "Bir tapşırığı bitirmədən başqasına keçirsən?",
+    yes: { query: "necə fokuslana bilərəm, hansı texnika kömək edər?" },
+    no: { query: "tapşırığı unutmamaq üçün nə edə bilərəm?" }
+  },
+  focusStart: {
+    question: "Problemin daha çox diqqətini qorumaqla bağlıdır?",
+    yes: "distractionCheck",
+    no: "habitCheck"
+  },
+  distractionCheck: {
+    question: "Xarici səs-küy və ya telefon səni yayındırır?",
+    yes: { query: "diqqətimi necə qoruya bilərəm, yayınmadan?" },
+    no: { query: "uzun müddət fokuslana bilmirəm, hansı texnika lazımdır?" }
+  },
+  habitCheck: {
+    question: "Problemin daha çox vərdiş və ya rutin qurmaqla bağlıdır?",
+    yes: { query: "vərdiş formalaşdırmaq üçün nə edə bilərəm?" },
+    no: { query: "vaxtı necə idarə edə bilərəm, unutmamaq üçün?" }
+  }
+};
+
+let akinatorState = "start";
+
+function renderAkinatorQuestion() {
+  document.getElementById("akinatorBox").style.display = "block";
+  document.getElementById("akinatorResult").style.display = "none";
+  document.getElementById("akinatorQuestion").textContent = akinatorTree[akinatorState].question;
+}
+renderAkinatorQuestion();
+
+async function akinatorAnswer(isYes) {
+  const node = akinatorTree[akinatorState];
+  const next = isYes ? node.yes : node.no;
+
+  if (typeof next === "string") {
+    akinatorState = next;
+    renderAkinatorQuestion();
+    return;
+  }
+
+  document.getElementById("akinatorBox").style.display = "none";
+  const resultBox = document.getElementById("akinatorResult");
+  resultBox.style.display = "block";
+  resultBox.innerHTML = `<p class="status">Sənə uyğun məsləhət hazırlanır...</p>`;
+  setAvatarMood("thinking");
+
+  try {
+    const res = await fetch(`${API_BASE}/ask`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: next.query })
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    resultBox.innerHTML = `
+      <div class="chat-msg answer">${escapeHtml(data.answer)}</div>
+      <button onclick="restartAkinator()"><i class="ti ti-refresh"></i>Yenidən sına</button>
+    `;
+    setAvatarMood("happy");
+  } catch (err) {
+    resultBox.innerHTML = `
+      <p class="status">Xəta baş verdi, server işləyirmi yoxla.</p>
+      <button onclick="restartAkinator()"><i class="ti ti-refresh"></i>Yenidən sına</button>
+    `;
+    setAvatarMood("idle");
+  }
+}
+
+function restartAkinator() {
+  akinatorState = "start";
+  renderAkinatorQuestion();
+}
+
+function toggleRiskFields() {
+  const fields = document.getElementById("riskFields");
+  const btn = document.getElementById("riskToggleBtn");
+  const open = fields.classList.toggle("open");
+  btn.textContent = open ? "Gizlət" : "Dəyərləri daxil et";
+}
+
+function updateProgress() {
+  const bar = document.getElementById("progressBar");
+  if (totalTasks === 0) { bar.style.display = "none"; return; }
+  bar.style.display = "flex";
+  const pct = Math.round((doneTasks / totalTasks) * 100);
+  document.getElementById("progressText").textContent = `${doneTasks} / ${totalTasks} bitib (${pct}%)`;
+  const fill = document.getElementById("progressFill");
+  fill.style.width = `${pct}%`;
+  fill.style.background = pct >= 70 ? "var(--low)" : pct >= 40 ? "var(--medium)" : "var(--high)";
+}
+
+async function submitBrainDump() {
+  const input = document.getElementById("brainDumpInput");
+  const status = document.getElementById("brainDumpStatus");
+  const btn = document.getElementById("brainDumpBtn");
+  const text = input.value.trim();
+  if (!text) return;
+
+  btn.disabled = true;
+  status.textContent = "Analiz olunur...";
+
+  try {
+    const res = await fetch(`${API_BASE}/brain-dump`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: CURRENT_USER_ID, text })
+    });
+    if (!res.ok) throw new Error("Server xətası");
+    const data = await res.json();
+    data.created_tasks.forEach(t => addTaskToList(t));
+    input.value = "";
+    status.textContent = `${data.created_tasks.length} tapşırıq əlavə edildi. Yaxşı başlanğıcdır.`;
+  } catch (err) {
+    status.textContent = "Xəta baş verdi, yenidən sına.";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function addTaskToList(task) {
+  const list = document.getElementById("taskList");
+  const empty = list.querySelector(".empty");
+  if (empty) empty.remove();
+
+  const isDone = task.status === "done";
+  const row = document.createElement("div");
+  row.className = "task" + (isDone ? " done" : "");
+  row.dataset.taskId = task.id;
+  row.innerHTML = `
+    <input type="checkbox" ${isDone ? "checked" : ""} onchange="onTaskToggle(this)">
+    <span class="priority-dot ${task.priority || 'low'}"></span>
+    <span class="task-title">${escapeHtml(task.title)}</span>
+    <span class="tag ${task.category || 'personal'}">${task.category || ''}</span>
+    <button class="delete-btn" onclick="deleteTask(this)" aria-label="Sil"><i class="ti ti-trash"></i></button>
+  `;
+  list.appendChild(row);
+  totalTasks++;
+  if (isDone) doneTasks++;
+  updateProgress();
+}
+
+async function deleteTask(btn) {
+  const row = btn.closest(".task");
+  const taskId = row.dataset.taskId;
+  const wasDone = row.classList.contains("done");
+
+  try {
+    await fetch(`${API_BASE}/tasks/${taskId}`, { method: "DELETE" });
+    row.remove();
+    totalTasks--;
+    if (wasDone) doneTasks--;
+    updateProgress();
+
+    const list = document.getElementById("taskList");
+    if (list.children.length === 0) {
+      list.innerHTML = `<p class="empty">Hələ tapşırıq yoxdur. Yuxarıda bir şey yaz, başlayaq.</p>`;
+    }
+  } catch (err) {
+    console.error("Silinmədi", err);
+  }
+}
+async function deleteTask(btn) {
+  const row = btn.closest(".task");
+  const taskId = row.dataset.taskId;
+  const wasDone = row.classList.contains("done");
+
+  try {
+    await fetch(`${API_BASE}/tasks/${taskId}`, { method: "DELETE" });
+    row.remove();
+    totalTasks--;
+    if (wasDone) doneTasks--;
+    updateProgress();
+
+    const list = document.getElementById("taskList");
+    if (list.children.length === 0) {
+      list.innerHTML = `<p class="empty">Hələ tapşırıq yoxdur. Yuxarıda bir şey yaz, başlayaq.</p>`;
+    }
+  } catch (err) {
+    console.error("Silinmədi", err);
+  }
+}
+async function onTaskToggle(checkbox) {
+  const row = checkbox.parentElement;
+  const nowDone = row.classList.toggle("done");
+  doneTasks += nowDone ? 1 : -1;
+  updateProgress();
+
+  const taskId = row.dataset.taskId;
+  const newStatus = nowDone ? "done" : "pending";
+  try {
+    await fetch(`${API_BASE}/tasks/${taskId}?status=${newStatus}`, { method: "PUT" });
+  } catch (err) {
+    console.error("Status yenilənmədi", err);
+  }
+}
+
+async function checkRisk() {
+  const sum = (ids) => ids.reduce((s, id) => s + parseInt(document.getElementById(id).value || 0), 0);
+  const depSum = sum(["dep1", "dep2", "dep3", "dep4", "dep5"]);
+  const anxSum = sum(["anx1", "anx2", "anx3", "anx4", "anx5"]);
+  const alcSum = sum(["alc1", "alc2", "alc3"]);
+  const academic = parseFloat(document.getElementById("f_academic").value || 65);
+
+  const payload = {
+    age: parseFloat(document.getElementById("f_age").value || 0),
+    sex: parseInt(document.getElementById("f_sex").value || 0),
+    bdi_total: Math.round(depSum * 4.2),
+    bai_total: Math.round(anxSum * 4.2),
+    audit_total: Math.round(alcSum * 4.4),
+    matric_mark: academic,
+    nbt_ave: academic
+  };
+
+  const resultBox = document.getElementById("riskResult");
+  resultBox.innerHTML = `<p class="status">Hesablanır...</p>`;
+
+  try {
+    const res = await fetch(`${API_BASE}/predict`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const labels = { low: "Aşağı", medium: "Orta", high: "Yüksək" };
+    const advice = {
+      low: "Hazırkı göstəricilərin yaxşı vəziyyətdədir. Mövcud rutinini davam etdir — kiçik fasilələr və müntəzəm yuxu bu balansı qorumağa kömək edir.",
+      medium: "Bəzi göstəricilərdə yüngül gərginlik var. Pomodoro texnikası (25 dəqiqə iş, 5 dəqiqə fasilə) və tapşırıqları kiçik addımlara bölmək faydalı ola bilər.",
+      high: "Göstəricilər əlavə diqqət tələb edir. Gündəlik yükünü azaltmaq, fasilələri artırmaq faydalı olar. Əgər bu hisslər davam edirsə, bir mütəxəssislə danışmaq tövsiyə olunur."
+    };
+    resultBox.innerHTML = `
+      <span class="risk-badge ${data.risk_level}">${labels[data.risk_level] || data.risk_level}</span>
+      <div class="risk-bar">
+        <div class="risk-bar-segment low ${data.risk_level === 'low' ? 'active' : ''}"></div>
+        <div class="risk-bar-segment medium ${data.risk_level === 'medium' ? 'active' : ''}"></div>
+        <div class="risk-bar-segment high ${data.risk_level === 'high' ? 'active' : ''}"></div>
+      </div>
+      <div class="risk-bar-labels"><span>Aşağı</span><span>Orta</span><span>Yüksək</span></div>
+      <p class="risk-note">Etibarlılıq: ${Math.round(data.confidence * 100)}%. ${data.note}</p>
+      <p class="risk-advice">${advice[data.risk_level] || ""}</p>
+    `;
+  } catch (err) {
+    resultBox.innerHTML = `<p class="status">Xəta baş verdi, dəyərləri yoxla.</p>`;
+  }
+}
+
+async function askQuestion() {
+  const input = document.getElementById("chatInput");
+  const log = document.getElementById("chatLog");
+  const question = input.value.trim();
+  if (!question) return;
+
+  const qMsg = document.createElement("div");
+  qMsg.className = "chat-msg";
+  qMsg.textContent = question;
+  log.appendChild(qMsg);
+  input.value = "";
+  log.scrollTop = log.scrollHeight;
+
+  const loadingMsg = document.createElement("div");
+  loadingMsg.className = "chat-msg answer";
+  loadingMsg.textContent = "Düşünürəm...";
+  log.appendChild(loadingMsg);
+  log.scrollTop = log.scrollHeight;
+  setAvatarMood("thinking");
+
+  try {
+    const res = await fetch(`${API_BASE}/ask`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question })
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    loadingMsg.textContent = data.answer;
+    setAvatarMood("happy");
+  } catch (err) {
+    loadingMsg.textContent = "Xəta baş verdi, server işləyirmi yoxla.";
+    setAvatarMood("idle");
+  }
+  log.scrollTop = log.scrollHeight;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>
