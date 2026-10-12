@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+chroma_db/
+adhd_assistant.db
+.env

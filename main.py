@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
+from sqlalchemy import func
 import models
 from database import engine, SessionLocal
 import joblib
@@ -17,6 +17,11 @@ model = joblib.load("model.pkl")
 with open("features.json") as f:
     feature_list = json.load(f)
 models.Base.metadata.create_all(bind=engine)
+_db = SessionLocal()
+if not _db.query(models.User).filter(models.User.id == 1).first():
+    _db.add(models.User(id=1, name="Maga"))
+    _db.commit()
+_db.close()
 app = FastAPI(title="ADHD Assistant")
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -159,6 +164,7 @@ Cavab:"""
         prompt=prompt,
         options={"temperature": 0.1}
     )
+    log_action(db, 1, "question_asked")
     return {
         "answer": response["response"],
         "sources": [m["source"] for m in results["metadatas"][0]]
@@ -278,43 +284,22 @@ Assistent:"""
 
     return {"reply": response["response"].strip()}
 
-    from sqlalchemy import func
+def group_rows_by_period(rows):
+    report = {}
+    for period, action, count in rows:
+        report.setdefault(period, {})[action] = count
+    return report
 
 @app.get("/weekly-report")
 def weekly_report(db: Session = Depends(get_db)):
-    # Hər log-u həftəsinə görə qruplaşdırırıq (məs. "2026-W27")
-    rows = (
-        db.query(
-            func.strftime("%Y-W%W", models.Log.timestamp).label("period"),
-            models.Log.action,
-            func.count(models.Log.id).label("count")
-        )
-        .group_by("period", models.Log.action)
-        .order_by("period")
-        .all()
-    )
+    rows = (db.query(func.strftime("%Y-W%W", models.Log.timestamp).label("period"),
+                     models.Log.action, func.count(models.Log.id).label("count"))
+            .group_by("period", models.Log.action).order_by("period").all())
     return group_rows_by_period(rows)
 
 @app.get("/monthly-report")
 def monthly_report(db: Session = Depends(get_db)):
-    # Hər log-u ayına görə qruplaşdırırıq (məs. "2026-07")
-    rows = (
-        db.query(
-            func.strftime("%Y-%m", models.Log.timestamp).label("period"),
-            models.Log.action,
-            func.count(models.Log.id).label("count")
-        )
-        .group_by("period", models.Log.action)
-        .order_by("period")
-        .all()
-    )
+    rows = (db.query(func.strftime("%Y-%m", models.Log.timestamp).label("period"),
+                     models.Log.action, func.count(models.Log.id).label("count"))
+            .group_by("period", models.Log.action).order_by("period").all())
     return group_rows_by_period(rows)
-
-def group_rows_by_period(rows):
-    # Nəticəni {period: {action: count}} formasına çeviririk
-    report = {}
-    for period, action, count in rows:
-        if period not in report:
-            report[period] = {}
-        report[period][action] = count
-    return report
